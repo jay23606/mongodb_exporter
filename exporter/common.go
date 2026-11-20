@@ -18,6 +18,7 @@ package exporter
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"sort"
 	"strings"
 
@@ -183,7 +184,11 @@ func checkNamespacesForViews(ctx context.Context, client *mongo.Client, collecti
 		}
 
 		if _, ok := namespaces[collection]; !ok {
-			return nil, errors.Errorf("namespace %s is a view and cannot be used for collstats/indexstats", collection)
+			// Not a collection on this deployment: it is a view or does not exist here.
+			// Skip it so the namespaces that do exist are still collected.
+			slog.Default().Warn("skipping namespace: it is a view or does not exist on this deployment", "namespace", collection)
+
+			continue
 		}
 
 		filteredCollections = append(filteredCollections, collection)
